@@ -12,8 +12,7 @@ EOF
 
 # Install Ansible
 echo "Installing Ansible..."
-wget --quiet --output-document=/opt/get-pip.py \
-    https://bootstrap.pypa.io/get-pip.py
+wget --output-document=/opt/get-pip.py https://bootstrap.pypa.io/get-pip.py
 python /opt/get-pip.py
 pip install ansible
 
