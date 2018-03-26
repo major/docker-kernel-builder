@@ -12,7 +12,7 @@ RUN git clone --quiet --depth 50 \
     /opt/linux-next
 
 # Install Ansible
-RUN wget --quiet -output-document=/opt/get-pip.py \
+RUN wget --quiet --output-document=/opt/get-pip.py \
     https://bootstrap.pypa.io/get-pip.py
 RUN python /opt/get-pip.py
 RUN pip install ansible
