@@ -62,7 +62,7 @@
     # thinks that the version of git in CentOS 7 is too old for shallow
     # clones.
     - name: Clone the git repository
-      command: "git clone --depth 1 {{ (bare_clone_dir | bool) | ternary(bare_clone_dir, kernel_repo) }} {{ workdir }}"
+      command: "git clone --depth 1 {{ (bare_clone_dir | length > 0) | ternary(bare_clone_dir, kernel_repo) }} {{ workdir }}"
       args:
         warn: no
 
