@@ -9,6 +9,8 @@ cat << 'EOF'
 
 EOF
 
+whoami
+ls -al /opt
 
 # Install Ansible
 echo "Installing Ansible..."
