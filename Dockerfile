@@ -8,6 +8,11 @@ RUN yum --quiet --assumeyes install bison flex yum-utils git python \
 RUN yum-builddep --quiet --assumeyes kernel-*
 RUN yum clean all && rm -rf /var/cache/yum/*
 
+# Install Ansible
+RUN wget --output-document=/opt/get-pip.py https://bootstrap.pypa.io/get-pip.py
+RUN python /opt/get-pip.py
+RUN pip install ansible
+
 # Run playbook
 COPY run.sh /run.sh
 CMD /bin/bash /run.sh

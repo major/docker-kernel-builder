@@ -9,15 +9,6 @@ cat << 'EOF'
 
 EOF
 
-whoami
-ls -al /opt
-
-# Install Ansible
-echo "Installing Ansible..."
-wget --output-document=/opt/get-pip.py https://bootstrap.pypa.io/get-pip.py
-python /opt/get-pip.py
-pip install ansible
-
 # Clone Ansible playbook from git and run it
 echo "Executing playbook..."
 export DKB_DIR=/opt/docker-kernel-builder
