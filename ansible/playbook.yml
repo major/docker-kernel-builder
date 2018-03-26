@@ -3,7 +3,7 @@
 - hosts: all
   gather_facts: yes
   vars:
-    bare_clone_dir: no
+    bare_clone_dir_default: no
     kernel_buildtype_default: "targz-pkg"
     kernel_config_default: "https://src.fedoraproject.org/cgit/rpms/kernel.git/plain/kernel-x86_64.config"
     kernel_makeopts_default: "INSTALL_MOD_STRIP=1 kernelrelease -j{{ ansible_processor_vcpus }}"
@@ -15,7 +15,7 @@
 
     - name: Check for environment variables that override the defaults
       set_fact:
-        bare_clone_dir: "{{ ansible_env.BARE_CLONE_DIR | default(bare_clone_dir) }}"
+        bare_clone_dir: "{{ ansible_env.BARE_CLONE_DIR | default(bare_clone_dir_default) }}"
         kernel_buildtype: "{{ ansible_env.KERNEL_BUILDTYPE | default(kernel_buildtype_default) }}"
         kernel_config: "{{ ansible_env.KERNEL_CONFIG | default(kernel_config_default) }}"
         kernel_makeopts: "{{ ansible_env.KERNEL_MAKEOPTS | default(kernel_makeopts_default) }}"
