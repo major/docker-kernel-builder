@@ -48,20 +48,29 @@
       retries: 5
       until: patchwork_get is success
 
+    # NOTE(mhayden): Calling git directly is required here since Ansible still
+    # thinks that the version of git in CentOS 7 is too old for shallow
+    # clones.
     - name: Clone a bare repository if necessary
-      git:
-        repo: "{{ kernel_repo }}"
-        dest: "{{ bare_clone_dir }}"
-        depth: 1
+      command: "git clone --depth 1 --bare {{ kernel_repo }} {{ bare_clone_dir }}"
+      args:
+        warn: no
       when:
         - bare_clone_dir | length > 0
 
-    - name: Clone the git repository and checkout the correct ref
+    # NOTE(mhayden): Calling git directly is required here since Ansible still
+    # thinks that the version of git in CentOS 7 is too old for shallow
+    # clones.
+    - name: Clone the git repository
+      command: "git clone --depth 1 {{ (bare_clone_dir | bool) | ternary(bare_clone_dir, kernel_repo) }} {{ workdir }}"
+      args:
+        warn: no
+
+    - name: Check out the correct ref
       git:
         repo: "{{ (bare_clone_dir | bool) | ternary(bare_clone_dir, kernel_repo) }}"
         dest: "{{ workdir }}"
         version: "{{ kernel_ref }}"
-        depth: "{{ kernel_repo_depth }}"
 
     - name: Set temporary git username and email address
       command: "{{ item }}"
