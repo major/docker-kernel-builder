@@ -1,9 +1,9 @@
 ---
 
-- hosts: all
+- hosts: localhost
   gather_facts: yes
   vars:
-    bare_clone_dir_default: no
+    bare_clone_dir_default: ''
     kernel_buildtype_default: "targz-pkg"
     kernel_config_default: "https://src.fedoraproject.org/cgit/rpms/kernel.git/plain/kernel-x86_64.config"
     kernel_makeopts_default: "INSTALL_MOD_STRIP=1 kernelrelease -j{{ ansible_processor_vcpus }}"
@@ -54,7 +54,7 @@
         dest: "{{ bare_clone_dir }}"
         depth: 1
       when:
-        - bare_clone_dir | bool
+        - bare_clone_dir | length > 0
 
     - name: Clone the git repository and checkout the correct ref
       git:

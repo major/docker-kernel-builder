@@ -6,16 +6,6 @@ RUN yum --quiet --assumeyes install bison flex yum-utils git python \
     python-devel openssl-devel libffi-devel wget
 RUN yum-builddep --quiet --assumeyes kernel-*
 
-# Install Ansible
-RUN wget --quiet --output-document=/opt/get-pip.py \
-    https://bootstrap.pypa.io/get-pip.py
-RUN python /opt/get-pip.py
-RUN pip install ansible
-
-# Copy in ansible playbook (this should come from git later)
-RUN mkdir /opt/ansible/
-ADD ansible/hosts.txt /opt/ansible/
-ADD ansible/playbook.yml /opt/ansible/
-
 # Run playbook
-CMD ansible-playbook -i /opt/ansible/hosts.txt /opt/ansible/playbook.yml
+COPY run.sh /run.sh
+CMD /bin/bash /run.sh
