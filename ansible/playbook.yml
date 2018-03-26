@@ -3,6 +3,7 @@
 - hosts: all
   gather_facts: yes
   vars:
+    bare_clone_dir: no
     kernel_buildtype_default: "targz-pkg"
     kernel_config_default: "https://src.fedoraproject.org/cgit/rpms/kernel.git/plain/kernel-x86_64.config"
     kernel_makeopts_default: "INSTALL_MOD_STRIP=1 kernelrelease -j{{ ansible_processor_vcpus }}"
@@ -14,6 +15,7 @@
 
     - name: Check for environment variables that override the defaults
       set_fact:
+        bare_clone_dir: "{{ ansible_env.BARE_CLONE_DIR | default(bare_clone_dir) }}"
         kernel_buildtype: "{{ ansible_env.KERNEL_BUILDTYPE | default(kernel_buildtype_default) }}"
         kernel_config: "{{ ansible_env.KERNEL_CONFIG | default(kernel_config_default) }}"
         kernel_makeopts: "{{ ansible_env.KERNEL_MAKEOPTS | default(kernel_makeopts_default) }}"
@@ -46,12 +48,20 @@
       retries: 5
       until: patchwork_get is success
 
-    - name: Clone the git repository and checkout the correct ref
+    - name: Clone a bare repository if necessary
       git:
         repo: "{{ kernel_repo }}"
+        dest: "{{ bare_clone_dir }}"
+        depth: 1
+      when:
+        - bare_clone_dir | bool
+
+    - name: Clone the git repository and checkout the correct ref
+      git:
+        repo: "{{ (bare_clone_dir | bool) | ternary(bare_clone_dir, kernel_repo) }}"
         dest: "{{ workdir }}"
         version: "{{ kernel_ref }}"
-        depth: 1
+        depth: "{{ kernel_repo_depth }}"
 
     - name: Set temporary git username and email address
       command: "{{ item }}"
