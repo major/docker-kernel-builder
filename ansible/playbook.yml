@@ -1,0 +1,97 @@
+---
+
+- hosts: all
+  gather_facts: yes
+  vars:
+    kernel_config_default: "https://src.fedoraproject.org/cgit/rpms/kernel.git/plain/kernel-x86_64.config"
+    kernel_makeopts_default: "INSTALL_MOD_STRIP=1 kernelrelease -j{{ ansible_processor_vcpus }}"
+    kernel_buildtype_default: "targz-pkg"
+    workdir_default: /opt/linux-next/
+  tasks:
+
+    - name: Check for environment variables that override the defaults
+      set_fact:
+        kernel_config: "{{ ansible_env.KERNEL_CONFIG | default(kernel_config_default) }}"
+        kernel_makeopts: "{{ ansible_env.KERNEL_MAKEOPTS | default(kernel_makeopts_default) }}"
+        kernel_buildtype: "{{ ansible_env.KERNEL_BUILDTYPE | default(kernel_buildtype_default) }}"
+        workdir: "{{ ansible_env.WORKDIR | default(workdir_default) }}"
+        patchwork_patches: "{{ ansible_env.PATCHWORK_URLS | default('') }}"
+
+    - name: Make temporary directory to hold patches from patchwork
+      tempfile:
+        state: directory
+        suffix: skt
+      register: tempdir
+
+    - name: Warn user if there were no patches provided
+      debug:
+        msg: |
+          No patchwork patches were provided.
+          Building the kernel anyway.
+      when:
+        - patchwork_patches | length < 1
+
+    - name: Retrieve patchwork patches
+      get_url:
+        url: "{{ item }}/mbox/"
+        dest: "{{ tempdir.path }}/{{ item.split('/')[-3] }}.patch"
+      with_items: "{{ patchwork_patches.split(',') }}"
+      register: patchwork_get
+      retries: 5
+      until: patchwork_get is success
+
+    - name: Ensure kernel tree is clean
+      shell: "make mrproper"
+      args:
+        chdir: "{{ workdir }}"
+
+    - name: Set temporary git username and email address
+      command: "{{ item }}"
+      args:
+        chdir: "{{ workdir }}"
+      with_items:
+        - "git config user.name 'Kernel Builder'"
+        - "git config user.email 'kernelbuilder@example.com'"
+
+    - name: Apply patchwork patches
+      shell: "git am {{ tempdir.path }}/{{ item.split('/')[-3] }}.patch"
+      args:
+        chdir: "{{ workdir }}"
+      with_items: "{{ patchwork_patches.split(',') }}"
+
+    - name: Copy kernel config into place
+      get_url:
+        url: "{{ kernel_config }}"
+        dest: "{{ workdir }}/.config"
+
+    - name: Ensure config has any new defaults added
+      shell: "make olddefconfig"
+      args:
+        chdir: "{{ workdir }}"
+
+    - name: Disable debug build
+      shell: "scripts/config --disable DEBUG_INFO"
+      args:
+        chdir: "{{ workdir }}"
+
+    - name: Compile and package the kernel
+      shell: "make {{ kernel_makeopts }} {{ kernel_buildtype }}"
+      args:
+        chdir: "{{ workdir }}"
+      async: 3600
+      poll: 0
+      register: kernel_build_async
+
+    - name: Wait for kernel to finish building
+      async_status:
+        jid: "{{ kernel_build_async.ansible_job_id }}"
+      register: job_result
+      until: job_result.finished
+      retries: 60
+      delay: 60
+
+    - name: Search output for the output filename
+      debug:
+        msg: "{{ item | regex_replace('^.* successfully created in ./(.*)', '\\1') }}"
+      with_items:
+        - "{{ job_result.stdout_lines | select('search', 'successfully created') | list }}"
