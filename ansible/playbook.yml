@@ -3,17 +3,23 @@
 - hosts: all
   gather_facts: yes
   vars:
+    kernel_buildtype_default: "targz-pkg"
     kernel_config_default: "https://src.fedoraproject.org/cgit/rpms/kernel.git/plain/kernel-x86_64.config"
     kernel_makeopts_default: "INSTALL_MOD_STRIP=1 kernelrelease -j{{ ansible_processor_vcpus }}"
-    kernel_buildtype_default: "targz-pkg"
+    kernel_ref_default: "master"
+    kernel_repo_default: "git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git"
+    kernel_repo_depth_default: 1
     workdir_default: /opt/linux-next/
   tasks:
 
     - name: Check for environment variables that override the defaults
       set_fact:
+        kernel_buildtype: "{{ ansible_env.KERNEL_BUILDTYPE | default(kernel_buildtype_default) }}"
         kernel_config: "{{ ansible_env.KERNEL_CONFIG | default(kernel_config_default) }}"
         kernel_makeopts: "{{ ansible_env.KERNEL_MAKEOPTS | default(kernel_makeopts_default) }}"
-        kernel_buildtype: "{{ ansible_env.KERNEL_BUILDTYPE | default(kernel_buildtype_default) }}"
+        kernel_ref: "{{ ansible_env.KERNEL_REF | default(kernel_ref_default) }}"
+        kernel_repo: "{{ ansible_env.KERNEL_REPO | default(kernel_repo_default) }}"
+        kernel_repo_depth: "{{ ansible_env.KERNEL_REPO_DEPTH | default(kernel_repo_depth_default) }}"
         workdir: "{{ ansible_env.WORKDIR | default(workdir_default) }}"
         patchwork_patches: "{{ ansible_env.PATCHWORK_URLS | default('') }}"
 
@@ -40,10 +46,12 @@
       retries: 5
       until: patchwork_get is success
 
-    - name: Ensure kernel tree is clean
-      shell: "make mrproper"
-      args:
-        chdir: "{{ workdir }}"
+    - name: Clone the git repository and checkout the correct ref
+      git:
+        repo: "{{ kernel_repo }}"
+        dest: "{{ workdir }}"
+        version: "{{ kernel_ref }}"
+        depth: 1
 
     - name: Set temporary git username and email address
       command: "{{ item }}"
@@ -63,6 +71,11 @@
       get_url:
         url: "{{ kernel_config }}"
         dest: "{{ workdir }}/.config"
+
+    - name: Ensure kernel tree is clean
+      shell: "make mrproper"
+      args:
+        chdir: "{{ workdir }}"
 
     - name: Ensure config has any new defaults added
       shell: "make olddefconfig"

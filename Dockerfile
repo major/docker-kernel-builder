@@ -6,11 +6,6 @@ RUN yum --quiet --assumeyes install bison flex yum-utils git python \
     python-devel openssl-devel libffi-devel wget
 RUN yum-builddep --quiet --assumeyes kernel-*
 
-# Retrieve the kernel source
-RUN git clone --quiet --depth 50 \
-    git://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git \
-    /opt/linux-next
-
 # Install Ansible
 RUN wget --quiet --output-document=/opt/get-pip.py \
     https://bootstrap.pypa.io/get-pip.py
