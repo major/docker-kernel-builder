@@ -12,5 +12,7 @@ EOF
 # Clone Ansible playbook from git and run it
 echo "Executing playbook..."
 export DKB_DIR=/opt/docker-kernel-builder
+export ANSIBLE_CALLBACK_WHITELIST=profile_tasks
 git clone https://github.com/major/docker-kernel-builder $DKB_DIR
-ansible-playbook -i ${DKB_DIR}/ansible/hosts.txt ${DKB_DIR}/ansible/playbook.yml
+cd ${DKB_DIR}/ansible
+ansible-playbook -i hosts.txt playbook.yml

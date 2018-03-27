@@ -9,7 +9,7 @@ RUN yum-builddep --quiet --assumeyes kernel-*
 RUN yum clean all && rm -rf /var/cache/yum/*
 
 # Install Ansible
-RUN wget --output-document=/opt/get-pip.py https://bootstrap.pypa.io/get-pip.py
+RUN wget --quiet --output-document=/opt/get-pip.py https://bootstrap.pypa.io/get-pip.py
 RUN python /opt/get-pip.py
 RUN pip install ansible
 
